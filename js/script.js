@@ -18,8 +18,6 @@ window.addEventListener("scroll", () => {
 // Mobile menu toggle
 hamburger.addEventListener("click", () => {
 	navMenu.classList.toggle("active");
-
-	// Animate hamburger icon
 	hamburger.classList.toggle("active");
 });
 
@@ -40,7 +38,7 @@ navLinks.forEach((link) => {
 		const targetSection = document.querySelector(targetId);
 
 		if (targetSection) {
-			const offsetTop = targetSection.offsetTop - 80; // Account for fixed navbar
+			const offsetTop = targetSection.offsetTop - 80;
 
 			window.scrollTo({
 				top: offsetTop,
@@ -171,7 +169,6 @@ const contactMethods = document.querySelectorAll(".contact-method a");
 
 contactMethods.forEach((method) => {
 	method.addEventListener("click", (e) => {
-		// Allow default behavior for mailto and tel links
 		console.log("Contact method clicked:", e.target.textContent);
 	});
 });
@@ -183,7 +180,6 @@ const socialLinks = document.querySelectorAll(
 
 socialLinks.forEach((link) => {
 	link.addEventListener("click", (e) => {
-		// Prevent default if no href is set
 		if (link.getAttribute("href") === "#") {
 			e.preventDefault();
 			console.log("Social link clicked - Add your social media URL here");
@@ -193,7 +189,6 @@ socialLinks.forEach((link) => {
 });
 
 // ========== PERFORMANCE OPTIMIZATION ==========
-// Debounce scroll events for better performance
 function debounce(func, wait = 10) {
 	let timeout;
 	return function executedFunction(...args) {
@@ -206,14 +201,11 @@ function debounce(func, wait = 10) {
 	};
 }
 
-// Apply debounce to scroll handler
 const debouncedHighlight = debounce(highlightNavigation, 10);
 window.addEventListener("scroll", debouncedHighlight);
 
 // ========== ACCESSIBILITY ENHANCEMENTS ==========
-// Add keyboard navigation support
 document.addEventListener("keydown", (e) => {
-	// Escape key closes mobile menu
 	if (e.key === "Escape" && navMenu.classList.contains("active")) {
 		navMenu.classList.remove("active");
 		hamburger.classList.remove("active");
@@ -240,10 +232,15 @@ console.log(
 	"color: #BEA57D; font-size: 14px;",
 );
 
-// ── VIDEO SECTION ──────────────────────────────
+// ========== VIDEO SECTION ==========
 const VDURATION = 5000;
 const vcards = document.querySelectorAll(".vcard");
 let vActive = null;
+
+// Detect Safari/iOS — hover autoplay blocked without a user gesture
+const isSafari =
+	/^((?!chrome|android).)*safari/i.test(navigator.userAgent) ||
+	/iPad|iPhone|iPod/.test(navigator.userAgent);
 
 // Staggered scroll reveal
 const vObserver = new IntersectionObserver(
@@ -262,41 +259,48 @@ const vObserver = new IntersectionObserver(
 
 vcards.forEach((c) => vObserver.observe(c));
 
-// Swap out placeholder when video ready
+// Mark video as ready (swap out placeholder)
 function markVideoReady(v) {
 	v.classList.add("v-loaded");
 	v.closest(".vcard__media").classList.add("v-ready");
 }
 
 document.querySelectorAll(".vcard video").forEach((v) => {
-	// Fire on whichever event arrives first
+	// Listen on multiple events — whichever fires first wins
 	["loadedmetadata", "loadeddata", "canplay", "canplaythrough"].forEach((evt) => {
 		v.addEventListener(evt, () => markVideoReady(v), { once: true });
 	});
-
-	// If the browser already buffered enough before JS ran
-	if (v.readyState >= 1) {
-		markVideoReady(v);
-	}
-
-	// Force-load metadata in case preload was ignored
+	// Already buffered before JS ran
+	if (v.readyState >= 1) markVideoReady(v);
+	// Force metadata fetch (in case preload was ignored by browser)
 	v.load();
 });
 
-function vHasVideo(card) {
-	const v = card.querySelector("video");
-	return v && v.src && !v.src.endsWith("/") && v.readyState >= 1;
-}
-
 function vPlay(card) {
-	if (!vHasVideo(card)) return;
 	const video = card.querySelector("video");
+	if (!video || !video.src || video.src.endsWith("/")) return;
+
 	const bar = card.querySelector(".vcard__bar");
 	if (vActive && vActive !== card) vStop(vActive);
 	vActive = card;
 	card.classList.add("v-playing");
 	video.currentTime = 0;
-	video.play().catch(() => {});
+
+	// Wait for canplay if not buffered (common on Safari + remote CDN URLs)
+	const doPlay = () => {
+		video.play().catch(() => {
+			// Autoplay blocked (Safari policy) — clean reset
+			card.classList.remove("v-playing");
+			if (vActive === card) vActive = null;
+		});
+	};
+
+	if (video.readyState >= 3) {
+		doPlay();
+	} else {
+		video.addEventListener("canplay", doPlay, { once: true });
+	}
+
 	let start = null;
 	function step(ts) {
 		if (!start) start = ts;
@@ -323,14 +327,20 @@ function vStop(card) {
 }
 
 vcards.forEach((card) => {
+	// Click/tap always works on all browsers including Safari
 	card.addEventListener("click", () => {
 		card.classList.contains("v-playing") ? vStop(card) : vPlay(card);
 	});
-	let vHoverT;
-	card.addEventListener("mouseenter", () => {
-		vHoverT = setTimeout(() => {
-			if (!card.classList.contains("v-playing")) vPlay(card);
-		}, 700);
-	});
-	card.addEventListener("mouseleave", () => clearTimeout(vHoverT));
+
+	// Hover-to-preview only on non-Safari desktop
+	// Safari blocks muted autoplay on hover without a prior user gesture
+	if (!isSafari) {
+		let vHoverT;
+		card.addEventListener("mouseenter", () => {
+			vHoverT = setTimeout(() => {
+				if (!card.classList.contains("v-playing")) vPlay(card);
+			}, 700);
+		});
+		card.addEventListener("mouseleave", () => clearTimeout(vHoverT));
+	}
 });

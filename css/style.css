@@ -764,8 +764,17 @@ body {
 .vcard__media {
 	position: relative;
 	width: 100%;
+	/* aspect-ratio fallback for Safari < 15 */
+	padding-top: 56.25%;
 	aspect-ratio: 16 / 9;
 	overflow: hidden;
+}
+
+/* When aspect-ratio is supported, reset the padding-top hack */
+@supports (aspect-ratio: 16 / 9) {
+	.vcard__media {
+		padding-top: 0;
+	}
 }
 
 .vcard__media video {
@@ -969,6 +978,7 @@ body {
 	border-radius: 50%;
 	background: rgba(190, 165, 125, 0.15);
 	border: 1.5px solid var(--secondary);
+	-webkit-backdrop-filter: blur(10px);
 	backdrop-filter: blur(10px);
 	display: flex;
 	align-items: center;
@@ -1037,6 +1047,7 @@ body {
 	text-transform: uppercase;
 	color: var(--primary);
 	background: rgba(59, 37, 22, 0.65);
+	-webkit-backdrop-filter: blur(8px);
 	backdrop-filter: blur(8px);
 	border: 1px solid rgba(190, 165, 125, 0.25);
 	padding: 4px 10px;
