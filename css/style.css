@@ -467,6 +467,21 @@ body {
 	margin-bottom: 10px;
 }
 
+.work-type {
+	display: inline-block;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.8px;
+	text-transform: uppercase;
+	background-color: rgba(190, 165, 125, 0.18);
+	color: var(--secondary);
+	border: 1px solid rgba(190, 165, 125, 0.4);
+	border-radius: 20px;
+	padding: 2px 10px;
+	margin-left: 8px;
+	vertical-align: middle;
+}
+
 .work-date {
 	font-size: 18px;
 	white-space: nowrap;
